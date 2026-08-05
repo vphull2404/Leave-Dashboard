@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A simple team leave dashboard powered by Firebase." />
+  <title>Employee Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Canada IP Operations</p>
+        <h1>Employee Hub</h1>
+        <p class="subtitle">Track vacation and sick leave without counting company holidays.</p>
+      </div>
+      <button id="openAddEmployee" class="button button-secondary" type="button">+ Add Employee</button>
+    </header>
+
+    <main>
+      <section class="panel employee-panel" aria-labelledby="teamMembersHeading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Team</p>
+            <h2 id="teamMembersHeading">Select an employee</h2>
+          </div>
+          <p id="employeeCount" class="muted-text">0 employees</p>
+        </div>
+
+        <div id="employeeButtons" class="employee-buttons" aria-label="Employee profiles"></div>
+      </section>
+
+      <section class="selected-employee-row">
+        <div>
+          <p class="eyebrow">Selected employee</p>
+          <h2 id="selectedEmployeeName">No employee selected</h2>
+          <p id="selectedEmployeeRole" class="muted-text">Choose a profile above to view leave details.</p>
+        </div>
+        <div class="employee-actions">
+          <button id="deleteEmployee" class="button button-danger-outline" type="button" disabled>Delete Employee</button>
+          <button id="openAddLeave" class="button button-primary" type="button" disabled>+ Add Leave</button>
+        </div>
+      </section>
+
+      <section class="kpi-grid" aria-label="Leave summary">
+        <article class="kpi-card vacation-card filter-card" data-leave-filter="Vacation" role="button" tabindex="0" aria-label="Show vacation leave entries">
+          <div class="card-topline">
+            <div>
+              <p class="eyebrow">Annual balance</p>
+              <h3>Vacation Leave</h3>
+            </div>
+            <span class="card-icon" aria-hidden="true">☀</span>
+          </div>
+          <div class="metric-line">
+            <strong id="vacationUsed">0</strong>
+            <span>of <span id="vacationAllowance">10</span> days used</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div id="vacationProgress" class="progress-fill"></div>
+          </div>
+          <p><strong id="vacationRemaining">10</strong> days remaining</p>
+        </article>
+
+        <article class="kpi-card sick-card filter-card" data-leave-filter="Sick" role="button" tabindex="0" aria-label="Show sick leave entries">
+          <div class="card-topline">
+            <div>
+              <p class="eyebrow">Annual balance</p>
+              <h3>Sick Leave</h3>
+            </div>
+            <span class="card-icon" aria-hidden="true">✚</span>
+          </div>
+          <div class="metric-line">
+            <strong id="sickUsed">0</strong>
+            <span>of <span id="sickAllowance">5</span> days used</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div id="sickProgress" class="progress-fill"></div>
+          </div>
+          <p><strong id="sickRemaining">5</strong> days remaining</p>
+        </article>
+
+        <article class="kpi-card holiday-card">
+          <div class="card-topline">
+            <div>
+              <p class="eyebrow">Company-wide</p>
+              <h3>Public Holidays</h3>
+            </div>
+            <span class="card-icon" aria-hidden="true">★</span>
+          </div>
+          <div class="metric-line">
+            <strong id="holidayDays">12</strong>
+            <span>days in 2026</span>
+          </div>
+          <p class="holiday-note">These holidays apply to everyone and are not deducted from personal leave.</p>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel history-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Employee record</p>
+              <h2>Leave History</h2>
+            </div>
+            <div class="history-tools">
+              <span id="historyCount" class="status-pill">0 entries</span>
+              <button id="removeFilter" class="remove-filter-button" type="button" hidden>Remove filter</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Dates</th>
+                  <th>Type</th>
+                  <th>Days</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="leaveHistoryBody">
+                <tr>
+                  <td colspan="6" class="empty-state">Select an employee to see their leave history.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <aside class="panel holiday-panel">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">2026 calendar</p>
+              <h2>Public Holidays</h2>
+            </div>
+          </div>
+          <div id="holidayList" class="holiday-list"></div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="employeeDialog" class="modal">
+    <form id="employeeForm" method="dialog" class="modal-card">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Team management</p>
+          <h2>Add Employee</h2>
+        </div>
+        <button class="icon-button" type="button" data-close="employeeDialog" aria-label="Close">×</button>
+      </div>
+
+      <label>
+        Full name
+        <input id="employeeName" name="employeeName" type="text" placeholder="Example: Zyaam Ali" required />
+      </label>
+
+      <label>
+        Initials
+        <input id="employeeInitials" name="employeeInitials" type="text" maxlength="3" placeholder="Example: ZI" required />
+      </label>
+
+      <div class="two-column-fields">
+        <label>
+          Vacation allowance
+          <input id="employeeVacation" name="employeeVacation" type="number" min="0" value="10" required />
+        </label>
+
+        <label>
+          Sick allowance
+          <input id="employeeSick" name="employeeSick" type="number" min="0" value="5" required />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="button button-secondary" type="button" data-close="employeeDialog">Cancel</button>
+        <button class="button button-primary" type="submit">Save Employee</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="leaveDialog" class="modal">
+    <form id="leaveForm" method="dialog" class="modal-card">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Leave entry</p>
+          <h2>Add Leave</h2>
+        </div>
+        <button class="icon-button" type="button" data-close="leaveDialog" aria-label="Close">×</button>
+      </div>
+
+      <p id="leaveEmployeeLabel" class="selected-person"></p>
+
+      <label>
+        Leave type
+        <select id="leaveType" required>
+          <option value="Vacation">Vacation</option>
+          <option value="Sick">Sick</option>
+        </select>
+      </label>
+
+      <div class="two-column-fields">
+        <label>
+          Start date
+          <input id="leaveStartDate" type="date" required />
+        </label>
+
+        <label>
+          End date
+          <input id="leaveEndDate" type="date" required />
+        </label>
+      </div>
+
+      <label>
+        Status
+        <select id="leaveStatus" required>
+          <option value="Approved">Approved</option>
+          <option value="Pending">Pending</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </label>
+
+      <label>
+        Notes
+        <textarea id="leaveNotes" rows="3" placeholder="Optional notes"></textarea>
+      </label>
+
+      <p class="form-help">Weekends and the listed public holidays are excluded when calculating leave days.</p>
+
+      <div class="modal-actions">
+        <button class="button button-secondary" type="button" data-close="leaveDialog">Cancel</button>
+        <button class="button button-primary" type="submit">Save Leave</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
